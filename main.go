@@ -9,7 +9,6 @@ func main() {
 	// var err error
 	// var attempt = 3
 	gme := game.NewGame()
-	gme.DisplayGrid()
 	gme.StartGame()
 
 	// for i := 1; i <= attempt; i++ {

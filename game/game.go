@@ -35,7 +35,7 @@ func NewGame() XOInterface {
 // XOInterface exposes the game functionality
 type XOInterface interface {
 	DisplayGrid()
-	GetPlayerInput() (int, error)
+	GetPlayerInput(attempt int) (int, error)
 	SetPlayerInput(playerName string, position int)
 	StartGame()
 }
@@ -48,14 +48,41 @@ func (g *xo) DisplayGrid() {
 }
 
 // GetPlayerInput gets the input from the player and validate it.
-func (g *xo) GetPlayerInput() (int, error) {
+func (g *xo) GetPlayerInput(attempt int) (int, error) {
+	var (
+		position int
+		err      error
+	)
+inputLoop:
+	for i := 1; i <= attempt; i++ {
+		position, err = g.getInput()
+		switch {
+		case err != nil && i < attempt:
+			fmt.Printf("Error:%v \n", err)
+		case err != nil && i == attempt:
+			fmt.Println("invalid input")
+			break
+		default:
+			break inputLoop
+		}
+	}
+	return position, err
+}
+
+func (g *xo) getInput() (int, error) {
 	var position int
 	fmt.Println("Enter the position")
 	fmt.Scanln(&position)
-	// validate the input.
+
+	// validate the position.
 	if position < 1 || position > 9 {
 		return -1, errInvalidPosition
 	}
+	// validate the position is new
+	if elementInSlice(g.players, g.grid[position-1]) {
+		return -1, errInvalidPosition
+	}
+
 	return position, nil
 }
 
@@ -67,16 +94,38 @@ func (g *xo) SetPlayerInput(playerName string, position int) {
 
 // StartGame() starts one game session of xo
 func (g *xo) StartGame() {
-	for g.turn < 6 {
+	for g.turn < 10 {
 		fmt.Println("Welcome to the game")
 		// 1. put the introductory text here
 		// 2. display the grid.
-		// 3. set the current Player %2 operation.
+		g.DisplayGrid()
 		// 4. accept the input
-		// 5. display the grid
-		// 6. evalute the turn; if not 3(continue)
-		// 7. start calculation of the result()
+		position, err := g.GetPlayerInput(3)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		// 4. set the current Player %2 operation.
+		playerName := g.players[g.turn%2]
+		// 5. SetPlayerInput
+		g.SetPlayerInput(playerName, position)
+		// 6. display the grid
+		g.DisplayGrid()
+		// 7. evalute the turn; if not 3(continue)
+		// 8. start calculation of the result()
 
 		g.turn++
 	}
+}
+
+// helper function
+func elementInSlice(str []string, elem string) bool {
+	var exist = false
+	for i := range str {
+		if str[i] == elem {
+			exist = true
+			break
+		}
+	}
+	return exist
 }
