@@ -5,8 +5,11 @@ import (
 	"fmt"
 )
 
-var errInvalidPosition = errors.New("error invalid position entered")
-var grid = `
+// errors
+var (
+	errInvalidPosition = errors.New("error invalid position entered")
+	errFilledPosition  = errors.New("error position is already filled")
+	grid               = `
  ____ ____ ____ 
 | %s  | %s  | %s  |
 |____|____|____|
@@ -16,6 +19,7 @@ var grid = `
 |____|____|____|
 
 `
+)
 
 type xo struct {
 	grid    []string
@@ -69,6 +73,7 @@ inputLoop:
 	return position, err
 }
 
+// getInput accept the user input
 func (g *xo) getInput() (int, error) {
 	var position int
 	fmt.Println("Enter the position")
@@ -79,8 +84,8 @@ func (g *xo) getInput() (int, error) {
 		return -1, errInvalidPosition
 	}
 	// validate the position is new
-	if elementInSlice(g.players, g.grid[position-1]) {
-		return -1, errInvalidPosition
+	if g.isPositionFilled(position) {
+		return -1, errFilledPosition
 	}
 
 	return position, nil
@@ -94,38 +99,37 @@ func (g *xo) SetPlayerInput(playerName string, position int) {
 
 // StartGame() starts one game session of xo
 func (g *xo) StartGame() {
+	// 1. put the introductory text here
+	fmt.Println("Welcome to the game")
+	// 2. display the grid.
+	g.DisplayGrid()
 	for g.turn < 10 {
-		fmt.Println("Welcome to the game")
-		// 1. put the introductory text here
-		// 2. display the grid.
-		g.DisplayGrid()
+		// 3. set the current Player %2 operation.
+		playerName := g.players[g.turn%2]
+		fmt.Printf("%s Player turns \n", playerName)
 		// 4. accept the input
 		position, err := g.GetPlayerInput(3)
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
-		// 4. set the current Player %2 operation.
-		playerName := g.players[g.turn%2]
 		// 5. SetPlayerInput
 		g.SetPlayerInput(playerName, position)
-		// 6. display the grid
+		// 6. display the grid.
 		g.DisplayGrid()
-		// 7. evalute the turn; if not 3(continue)
-		// 8. start calculation of the result()
-
+		// 7. evalute the turn; if not 3(continue),start calculation of the result()
 		g.turn++
 	}
 }
 
-// helper function
-func elementInSlice(str []string, elem string) bool {
-	var exist = false
-	for i := range str {
-		if str[i] == elem {
-			exist = true
+// isPositionFilled checks if position is filled
+func (g *xo) isPositionFilled(position int) bool {
+	var posFilled = false
+	for i := range g.players {
+		if g.players[i] == g.grid[position-1] {
+			posFilled = true
 			break
 		}
 	}
-	return exist
+	return posFilled
 }
