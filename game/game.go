@@ -3,12 +3,14 @@ package game
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"sort"
+	"strconv"
 )
 
 const (
 	draw      = "draw"
 	win       = "win"
-	lose      = "lose"
 	inProcess = "in_process"
 )
 
@@ -31,6 +33,7 @@ var (
 |____|____|____|
 
 `
+	allPossibleMoves [][]int
 )
 
 type xo struct {
@@ -119,6 +122,7 @@ func (g *xo) StartGame() {
 	fmt.Println("Welcome to the game")
 	// 2. display the grid.
 	g.DisplayGrid()
+xoGame:
 	for g.turn < 10 {
 		// 3. set the current Player %2 operation.
 		playerName := g.players[g.turn%2]
@@ -136,7 +140,16 @@ func (g *xo) StartGame() {
 		// 7. increment the turn
 		g.turn++
 		// 8. evalute the turn; if not 3(continue),start calculation of the result()
-		g.EvaluateGameResult()
+		result := g.EvaluateGameResult(playerName)
+
+		switch {
+		case result == win:
+			fmt.Printf("Player %s wins \n", playerName)
+			break xoGame
+		case result == inProcess && g.turn == 10:
+			fmt.Println("GAME DRAW")
+		}
+
 	}
 }
 
@@ -153,15 +166,115 @@ func (g *xo) isPositionFilled(position int) bool {
 }
 
 // EvaluateResult docs
-func (g *xo) EvaluateGameResult() string {
+func (g *xo) EvaluateGameResult(playerName string) string {
+	// 1. calculate the number of turns. if turn is !6 return nothing.
 	if g.turn < 6 {
 		return inProcess
 	}
-	fmt.Println(g.playerMoves)
-	// 1. calculate the number of turns. if turn is !3 return nothing.
 	// 2. evaluate the current player Move.
-	// g.playerMoves[]
-	return ""
+	if g.evalutePlayerWin(g.playerMoves[playerName]) {
+		return win
+	}
+	return inProcess
 }
 
-func evalutePlayerWin(moves []int) {}
+// evaluate the current player moves against the winCombination
+func (g *xo) evalutePlayerWin(moves []int) bool {
+	var playerWin bool
+	playerMoves := g.GetPotentialPlayerMoves(moves)
+evaluateWin:
+	for i := range playerMoves {
+		for j := range winCombo {
+			if reflect.DeepEqual(playerMoves[i], winCombo[j]) {
+				playerWin = true
+				break evaluateWin
+			}
+		}
+	}
+	return playerWin
+}
+
+// GetPotentialPlayerMoves returns the potential player moves in window size of 3
+func (g *xo) GetPotentialPlayerMoves(moves []int) [][]int {
+	var potentialPlayerMoves [][]int
+	var moveExist = make(map[string]struct{})
+	evaluatePermutation(moves, 0, len(moves)-1)
+	for i := range allPossibleMoves {
+		uniq := getUniqMoves(moveExist, sliceMovesInWindowSize(allPossibleMoves[i], 3)...)
+		potentialPlayerMoves = append(potentialPlayerMoves, uniq...)
+	}
+	return potentialPlayerMoves
+}
+
+// swap
+func swap(k []int, i int, j int) []int {
+	var temp int
+	var s []int
+	s = append(s, k...)
+	temp = s[i]
+	s[i] = s[j]
+	s[j] = temp
+	return s
+}
+
+// evaluatePermutation
+func evaluatePermutation(moves []int, left int, right int) {
+	if left == right {
+		allPossibleMoves = append(allPossibleMoves, moves)
+	} else {
+
+		for i := left; i <= right; i++ {
+			str := swap(moves, left, i)
+			evaluatePermutation(str, left+1, right)
+		}
+	}
+}
+
+//  sliceMovesInWindowSize
+func sliceMovesInWindowSize(moves []int, size int) [][]int {
+	var i, j int
+
+	var groups [][]int
+	for j+size <= len(moves) {
+		var group []int
+		for i = j; i < size+j; i++ {
+			group = append(group, moves[i])
+		}
+		groups = append(groups, group)
+		j++
+	}
+
+	return groups
+}
+
+// GetUniqSample
+// check the array exist:
+// array 1D array exist in the 2D array
+// sort 1D array convert into string
+// store in map
+func getUniqMoves(comboMap map[string]struct{}, combo ...[]int) [][]int {
+	var uniq [][]int
+	for i := range combo {
+
+		key := sortAndConvertToString(combo[i])
+
+		if _, ok := comboMap[key]; !ok {
+			comboMap[key] = struct{}{}
+			uniq = append(uniq, combo[i])
+		}
+	}
+
+	return uniq
+}
+
+// sortAndConvertToString
+func sortAndConvertToString(arr []int) string {
+	var result string
+	sort.Slice(arr, func(i, j int) bool {
+		return arr[i] < arr[j]
+	})
+	for i := range arr {
+		result = result + strconv.Itoa(arr[i])
+	}
+	return result
+}
