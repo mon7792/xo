@@ -5,11 +5,23 @@ import (
 	"fmt"
 )
 
-// errors
+const (
+	draw      = "draw"
+	win       = "win"
+	lose      = "lose"
+	inProcess = "in_process"
+)
+
 var (
+	// errors
 	errInvalidPosition = errors.New("error invalid position entered")
 	errFilledPosition  = errors.New("error position is already filled")
-	grid               = `
+	winCombo           = [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9},
+		{1, 4, 7}, {2, 5, 8}, {3, 6, 9},
+		{1, 5, 9}, {3, 5, 7}}
+
+	// grid
+	grid = `
  ____ ____ ____ 
 | %s  | %s  | %s  |
 |____|____|____|
@@ -22,17 +34,19 @@ var (
 )
 
 type xo struct {
-	grid    []string
-	players []string
-	turn    int
+	grid        []string
+	players     []string
+	turn        int
+	playerMoves map[string][]int
 }
 
 // NewGame start the new game
 func NewGame() XOInterface {
 	return &xo{
-		grid:    []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"},
-		players: []string{"X", "O"},
-		turn:    1,
+		grid:        []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"},
+		players:     []string{"X", "O"},
+		turn:        1,
+		playerMoves: make(map[string][]int),
 	}
 }
 
@@ -93,8 +107,10 @@ func (g *xo) getInput() (int, error) {
 
 // SetPlayerInput sets the playername at postion - 1 in the grid
 func (g *xo) SetPlayerInput(playerName string, position int) {
-	position = position - 1
-	g.grid[position] = playerName
+	// set the player move
+	g.playerMoves[playerName] = append(g.playerMoves[playerName], position)
+	// set the grid position
+	g.grid[position-1] = playerName
 }
 
 // StartGame() starts one game session of xo
@@ -117,8 +133,10 @@ func (g *xo) StartGame() {
 		g.SetPlayerInput(playerName, position)
 		// 6. display the grid.
 		g.DisplayGrid()
-		// 7. evalute the turn; if not 3(continue),start calculation of the result()
+		// 7. increment the turn
 		g.turn++
+		// 8. evalute the turn; if not 3(continue),start calculation of the result()
+		g.EvaluateGameResult()
 	}
 }
 
@@ -133,3 +151,17 @@ func (g *xo) isPositionFilled(position int) bool {
 	}
 	return posFilled
 }
+
+// EvaluateResult docs
+func (g *xo) EvaluateGameResult() string {
+	if g.turn < 6 {
+		return inProcess
+	}
+	fmt.Println(g.playerMoves)
+	// 1. calculate the number of turns. if turn is !3 return nothing.
+	// 2. evaluate the current player Move.
+	// g.playerMoves[]
+	return ""
+}
+
+func evalutePlayerWin(moves []int) {}
