@@ -5,6 +5,8 @@ The game consist of 2 player.
 - Player O
 
 The Game Consist of 9 button..
+
+```
  ____ ____ ____ 
 | %s | %s | %s |
 |____|____|____|
@@ -12,6 +14,8 @@ The Game Consist of 9 button..
 |____|____|____|
 | %s | %s | %s |
 |____|____|____|
+
+```
 
 When the Web page opens.
 1. By default there is X player turns
